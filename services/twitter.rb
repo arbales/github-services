@@ -44,7 +44,11 @@ service :twitter do |data, payload|
   else
     payload['commits'].each do |commit|
       tiny_url = shorten_url(commit['url'])
-      statuses << "[#{repository}] #{tiny_url} #{commit['author']['name']} - #{commit['message']}"
+      unless data['omit_metadata']
+        statuses << "[#{repository}] #{tiny_url} #{commit['author']['name']} - #{commit['message']}"
+      else
+        statuses << "[#{repository}] #{commit['message']}"
+      end
     end
   end
 
