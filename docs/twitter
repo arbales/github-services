@@ -15,6 +15,7 @@ data
   - token
   - secret
   - digest (boolean)
+  - omit_metadata (boolean)
 
 payload
   - refer to docs/github_payload
