@@ -60,20 +60,26 @@ EOH
   end
 
   begin
-    message = TMail::Mail.new
-    message.set_content_type('text', 'plain', {:charset => 'UTF-8'})
-    message.to      = data['address']
-    message.subject = "[#{name_with_owner}] #{first_commit_sha}: #{first_commit_title}"
-    message.body    = body
-    message.date    = Time.now
 
-    smtp_settings  = [ email_conf['address'], (email_conf['port'] || 25).to_i, (email_conf['domain'] || 'localhost.localdomain') ]
-    smtp_settings += [ email_conf['user_name'], email_conf['password'], email_conf['authentication'] ] if email_conf['authentication']
-
-    Net::SMTP.start(*smtp_settings) do |smtp|
-      smtp.send_message message.to_s, "GitHub <noreply@github.com>", data['address']
+    via_options = {}
+    
+    via_options['address'] = email_conf['address']
+    via_options['port'] = (email_conf['port'] || 25).to_i
+    via_options['domain'] = (email_conf['domain'] || 'localhost.localdomain')
+    
+    if email_conf['authentication']
+      via_options['user_name'] = email_conf['user_name']
+      via_options['password'] = email_conf['password']
+      via_options['authentication'] = email_conf['authentication'].to_sym
     end
-  rescue Net::SMTPSyntaxError, Net::SMTPFatalError
-    raise GitHub::ServiceConfigurationError, "Invalid email address"
+    
+    Pony.mail(:to => data['address'], 
+      :from => "GitHub <noreply@github.com>",
+      :body => body,
+      :subject => "[#{name_with_owner}] #{first_commit_sha}: #{first_commit_title}", 
+      :via => :smtp, 
+      :via_options => via_options)
+  rescue
+    raise GitHub::ServiceConfigurationError, "Invalid email address or configuration."
   end
 end
